@@ -1,0 +1,25 @@
+{{ .Chart.Name }} has been deployed to namespace: {{ .Release.Namespace }}
+
+1. Ensure the image pull secret exists in the target namespace (one-time setup):
+
+   kubectl -n {{ .Release.Namespace }} create secret docker-registry registry-1 \
+     --docker-server=<registry> \
+     --docker-username=<username> \
+     --docker-password=<password>
+
+{{- if .Values.ingress.enabled }}
+
+2. The service is exposed via Ingress at:
+{{- range .Values.ingress.hosts }}
+   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else }}
+
+2. To reach the service from your laptop, port-forward it:
+
+   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "digital-id-verifier.fullname" . }} 5001:{{ .Values.service.port }}
+{{- end }}
+
+3. Inspect the deployment:
+
+   kubectl -n {{ .Release.Namespace }} get pods,svc,ingress -l app.kubernetes.io/instance={{ .Release.Name }}
