@@ -1,5 +1,5 @@
 Flask==2.2.5
-cryptography==48.0.1
+cryptography==50.0.0
 cbor2==5.4.6
 gunicorn==22.0.0
 isomdoc==0.0.4
