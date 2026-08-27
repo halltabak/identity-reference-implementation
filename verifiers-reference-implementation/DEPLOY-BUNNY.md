@@ -41,7 +41,7 @@ Single-Arch-Manifest liegt statt eines OCI-Index mit `unknown/unknown`-Attestati
 Aktuell gepusht und getestet:
 
 ```
-halltabak/digital-id-verifier:mc-20260827-be9ce64
+halltabak/digital-id-verifier:e179c9a
 sha256:5aeede96b0b84d67b965930a23bf7d17b4e551f308d2cdc4891d86e221b499a7
 ```
 
@@ -66,7 +66,7 @@ Magic Containers → **Image Registries** → **Add Image Registry**:
 Magic Containers → **Add App** → *Single region* (oder *Magic deployment*).
 
 - Region: naechstgelegene EU-Region
-- Container: `halltabak/digital-id-verifier:mc-20260827-be9ce64` aus der obigen Registry
+- Container: `halltabak/digital-id-verifier:e179c9a` aus der obigen Registry
 - Endpoint: **CDN**, Container-Port `5001`, *SSL for origin* **aus**
   (im Container laeuft plain HTTP; TLS terminiert Bunny)
 - Health Checks (Container Settings → Monitoring): Readiness **und** Liveness,
