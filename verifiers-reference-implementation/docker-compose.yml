@@ -1,0 +1,26 @@
+services:
+  verifier:
+    build:
+      context: ./python-server
+      # Magic Containers only runs linux/amd64 — build the same arch locally so
+      # what you test is what you ship.
+      platforms:
+        - linux/amd64
+    image: halltabak/digital-id-verifier:dev
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: "5001"
+      # Overrides for config.py — uncomment and fill in as needed:
+      # APP_PACKAGE_NAME: "com.example.wallet"
+      # ANDROID_APP_SIGNATURE_HASH: "<sha256_without_colons>"
+      # ZK_VERIFIER_URL: "https://zkverifier.example/zkverify"
+      # SPECS_URL: "https://zkverifier.example/specs"
+    restart: unless-stopped
+    healthcheck:
+      # python-slim has no curl/wget, so probe with the interpreter that is there.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

@@ -1065,6 +1065,12 @@ def handle_verification():
         return jsonify({'success': False, 'error': 'An unexpected error occurred during verification.'}), 500
 
 
+@app.route('/healthz', methods=['GET'])
+def healthz():
+    """Lightweight liveness/readiness probe (no template rendering)."""
+    return jsonify({'status': 'ok'}), 200
+
+
 @app.route('/', methods=['GET'])
 def home():
     """Renders the main HTML page for the Relying Party (RP) web application."""

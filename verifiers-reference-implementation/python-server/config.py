@@ -15,19 +15,28 @@ limitations under the License.
 '''
 
 # --- Configuration ---
+#
+# Every value can be overridden at runtime via an environment variable of the
+# same name. This is what container platforms (Bunny Magic Containers, Cloud Run,
+# Kubernetes) expose, and it avoids rebuilding the image just to change a URL.
+
+import os
+
 
 # TODO: Replace with your actual application's package name (for Android)
 # Used in constructing the SessionTranscript for the 'preview' protocol.
-APP_PACKAGE_NAME = "<your_app_package_name>"
+APP_PACKAGE_NAME = os.environ.get("APP_PACKAGE_NAME", "<your_app_package_name>")
 
 # TODO: Replace with the actual SHA-256 hash of your Android app's signing certificate
 # Used in constructing the SessionTranscript for the 'openid4vp' protocol when
 # the origin is an Android app. Find using:
 # keytool -printcert -jarfile your_app.apk | grep SHA256 | awk '{print $2}' | xxd -r -p | sha256sum | awk '{print $1}'
-ANDROID_APP_SIGNATURE_HASH = "<your_app_signature_here_without_':'>"
+ANDROID_APP_SIGNATURE_HASH = os.environ.get(
+    "ANDROID_APP_SIGNATURE_HASH", "<your_app_signature_here_without_':'>"
+)
 
 # URL for the external Zero-Knowledge Verifier service's verification endpoint.
-ZK_VERIFIER_URL = "<path_to_ZKverifier>/zkverify"
+ZK_VERIFIER_URL = os.environ.get("ZK_VERIFIER_URL", "<path_to_ZKverifier>/zkverify")
 # URL for the external Zero-Knowledge Verifier service's specifications endpoint.
-SPECS_URL = "<path_to_ZKverifier>/specs"
+SPECS_URL = os.environ.get("SPECS_URL", "<path_to_ZKverifier>/specs")
 
