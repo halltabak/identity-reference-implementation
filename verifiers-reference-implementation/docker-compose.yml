@@ -16,6 +16,11 @@ services:
       # ANDROID_APP_SIGNATURE_HASH: "<sha256_without_colons>"
       # ZK_VERIFIER_URL: "https://zkverifier.example/zkverify"
       # SPECS_URL: "https://zkverifier.example/specs"
+      #
+      # Signing material for openid4vp-v1-signed, base64-encoded PEM
+      # (base64 -w0 verifier.pk8.pem). Never commit real values.
+      # VERIFIER_PRIVATE_KEY: "${VERIFIER_PRIVATE_KEY}"
+      # VERIFIER_CERTIFICATE: "${VERIFIER_CERTIFICATE}"
     restart: unless-stopped
     healthcheck:
       # python-slim has no curl/wget, so probe with the interpreter that is there.

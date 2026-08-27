@@ -74,6 +74,8 @@ Magic Containers → **Add App** → *Single region* (oder *Magic deployment*).
 - Environment Variables (optional, ueberschreiben `config.py`):
   `APP_PACKAGE_NAME`, `ANDROID_APP_SIGNATURE_HASH`, `ZK_VERIFIER_URL`, `SPECS_URL`,
   `PORT` (Default 5001)
+- Signaturmaterial fuer `openid4vp-v1-signed` (siehe unten): `VERIFIER_PRIVATE_KEY`,
+  `VERIFIER_CERTIFICATE`
 
 Danach steht die Endpoint-URL `mc-<hash>.bunny.run` im Tab **Endpoints**. Erst dagegen
 testen:
@@ -106,6 +108,25 @@ helm uninstall digital-id-verifier -n digital-id-verifier-prd --kube-context adm
 ```
 
 Chart und Makefile-Targets (`install`, `template`, `lint`) bleiben als Fallback im Repo.
+
+## Signierte Requests
+
+Das Image ist oeffentlich — der Signing-Key darf deshalb **niemals** in `keys.py`
+landen. Er wird zur Laufzeit per Env-Var injiziert, base64-kodiert, weil mehrzeilige
+PEM-Werte in Container-UIs unpraktisch sind:
+
+```bash
+base64 -w0 verifier.pk8.pem   # -> VERIFIER_PRIVATE_KEY
+base64 -w0 verifier.crt       # -> VERIFIER_CERTIFICATE
+```
+
+Beide Variablen in den Container Settings der App eintragen. Der Key muss ein
+PKCS#8-PEM einer EC-P-256-Schluessels sein (ES256), das Zertifikat das dazu
+passende X.509-PEM — sein SHA-256-Fingerprint wird zur `client_id`
+(`x509_hash:<fingerprint>`) und das DER landet als `x5c` im JOSE-Header.
+
+Ohne diese Variablen bleiben die Platzhalter aus `keys.py` aktiv: unsignierte
+Requests funktionieren, signierte werden mit einer klaren Logmeldung abgelehnt.
 
 ## Betriebshinweise
 

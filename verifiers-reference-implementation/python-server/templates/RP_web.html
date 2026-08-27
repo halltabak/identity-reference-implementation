@@ -443,7 +443,9 @@ limitations under the License. -->
             protocol: selectedProtocol,
             doctype: selectedIdTypes,
             requestZkp: enableZkRequestCheckbox.checked,
-            attributes: selectedAttributes
+            attributes: selectedAttributes,
+            // Signed requests bind this into 'expected_origins'.
+            origin: window.location.origin
         };
 
         // 4. Send request to backend, then send the response to the wallet.

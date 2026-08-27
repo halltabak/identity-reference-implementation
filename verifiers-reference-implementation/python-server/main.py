@@ -53,7 +53,7 @@ except ImportError:
     pass
 # --- End ZK payload size override ---------------------------------------------
 
-from keys import CERTIFICATE, PRIVATE_KEY
+from keys import CERTIFICATE, PRIVATE_KEY, SIGNING_CONFIGURED
 # --- Configuration ---
 import config
 
@@ -246,6 +246,10 @@ def construct_openid4vp_request(doctypes: list[str], requested_fields: list[dict
     }
     if is_signed_request:
         # --- Request Signing (JAR / OpenID4VP) ---
+        if not SIGNING_CONFIGURED:
+            print("Error: signed requests require VERIFIER_PRIVATE_KEY and "
+                  "VERIFIER_CERTIFICATE; keys.py still holds the placeholders.")
+            return None
         try:
             # 1. Load the Verifier's Certificate
             # We must load the PEM string into a cryptography x509 object
@@ -861,6 +865,10 @@ def handle_request_initiation():
         is_zkp_request = False
         if "requestZkp" in request_data and request_data["requestZkp"] is True:
             is_zkp_request = True
+
+        # Origin of the calling web page. Signed requests bind it into
+        # 'expected_origins'; for unsigned requests it stays empty.
+        origin = request_data.get("origin", "")
 
         # --- Input Validation ---
         if not protocol or not doctypes:
