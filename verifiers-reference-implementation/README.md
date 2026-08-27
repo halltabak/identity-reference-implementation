@@ -82,30 +82,107 @@ pip install -r requirements.txt
 
 ### Configuration
 
-Before running the server, you need to configure a few important variables in the `main.py` file. Open `main.py` and update the following placeholder values:
+Before running the server, you need to configure a few important variables in the `config.py` file. Open `config.py` and update the following placeholder values — or, when running in a container, set an environment variable of the same name instead (see [Container deployment](#container-deployment)):
 
 * **`APP_PACKAGE_NAME`**: Replace `"your.actual.app.package.name"` with your actual Android application's package name. This is crucial for the `openid4vp` protocol when interacting with an Android wallet.
     ```python
-    # in main.py
+    # in config.py
     APP_PACKAGE_NAME = "your.actual.app.package.name"
     ```
 
 * **`ANDROID_APP_SIGNATURE_HASH`**: Replace the placeholder hexadecimal string with the SHA-256 hash of your Android app's signing certificate. This is used to build the session transcript for verifying responses from an Android app.
     ```python
-    # in main.py
+    # in config.py
     ANDROID_APP_SIGNATURE_HASH = "your_android_app_signature_hash_here"
     ```
 * **`SPECS_URL`**: If you are using an external service for Zero-Knowledge Proof specifications, update this URL.
     ```python
-    # in main.py
+    # in config.py
     SPECS_URL = "https://your-zk-specs-service.com/specs"
     ```
 
 * **`ZK_VERIFIER_URL`**: If you are using an external Zero-Knowledge Proof verifier service, update this URL.
     ```python
-    # in main.py
+    # in config.py
     ZK_VERIFIER_URL = "https://your-zk-verifier-service.com/zkverify"
     ```
+***
+
+<a name="container-deployment"></a>
+### Container deployment
+
+The server also ships as a container image (`python-server/Dockerfile`). Every setting
+is overridable at runtime, so the same image can be deployed unchanged to different
+environments. See [DEPLOY-BUNNY.md](DEPLOY-BUNNY.md) for the Bunny Magic Containers
+deployment this repository uses.
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `PORT` | Port gunicorn binds to | `5001` |
+| `APP_PACKAGE_NAME` | Android package name, see Configuration above | placeholder from `config.py` |
+| `ANDROID_APP_SIGNATURE_HASH` | SHA-256 of the Android signing certificate | placeholder from `config.py` |
+| `ZK_VERIFIER_URL` | External ZK verifier endpoint | placeholder from `config.py` |
+| `SPECS_URL` | External ZK specs endpoint | placeholder from `config.py` |
+| `VERIFIER_PRIVATE_KEY` | Request signing key, PEM or base64-encoded PEM | placeholder from `keys.py` |
+| `VERIFIER_CERTIFICATE` | Matching certificate, PEM or base64-encoded PEM | placeholder from `keys.py` |
+
+Run it locally with `docker compose up --build` (or `make up`), which serves
+`http://localhost:5001`.
+
+#### Request signing material
+
+The `openid4vp-v1-signed` protocol signs the request as a JWS: the certificate is
+embedded as `x5c` in the JOSE header and its SHA-256 fingerprint becomes the
+`client_id` (`x509_hash:<fingerprint>`). The wallet identifies the verifier by that
+fingerprint, so keep the key stable — replacing it changes the `client_id`.
+
+This must be an EC P-256 key (ES256). A self-signed certificate is enough for the
+reference implementation:
+
+```bash
+cat > ext.cnf <<'EOF'
+[req]
+distinguished_name = dn
+prompt = no
+
+[dn]
+CN = your-verifier.example.com
+O  = Your Organisation
+C  = DE
+
+[v3]
+basicConstraints     = critical, CA:FALSE
+keyUsage             = critical, digitalSignature
+subjectAltName       = DNS:your-verifier.example.com
+subjectKeyIdentifier = hash
+EOF
+
+openssl ecparam -name prime256v1 -genkey -noout -out ec.key
+openssl pkcs8 -topk8 -nocrypt -in ec.key -out verifier-key.pem
+openssl req -new -x509 -key ec.key -out verifier-cert.pem \
+  -days 7300 -sha256 -config ext.cnf -extensions v3
+rm ec.key
+```
+
+The private key must never be committed or baked into the image. Pass both values as
+environment variables instead, base64-encoded so they survive single-line input fields:
+
+```bash
+echo "VERIFIER_PRIVATE_KEY=$(base64 -w0 verifier-key.pem)"
+echo "VERIFIER_CERTIFICATE=$(base64 -w0 verifier-cert.pem)"
+```
+
+The `client_id` the wallet will see:
+
+```bash
+openssl x509 -in verifier-cert.pem -outform DER \
+  | openssl dgst -sha256 -binary \
+  | basenc --base64url | tr -d '='
+```
+
+Without these variables the placeholders in `keys.py` stay active: unsigned requests
+keep working, signed ones are rejected with an explicit log message.
+
 ***
 
 ### Running the Server
@@ -158,7 +235,8 @@ The server exposes the following API endpoints:
             "requestZkp": boolean,
             "attributes": [
                 {"namespace": "string", "name": "string"}
-            ]
+            ],
+            "origin": "string"
         }
         ```
     * **Response** (JSON): The protocol, the generated request payload, and a state object to be used for verification.
