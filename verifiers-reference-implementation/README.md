@@ -136,8 +136,20 @@ embedded as `x5c` in the JOSE header and its SHA-256 fingerprint becomes the
 `client_id` (`x509_hash:<fingerprint>`). The wallet identifies the verifier by that
 fingerprint, so keep the key stable — replacing it changes the `client_id`.
 
-This must be an EC P-256 key (ES256). A self-signed certificate is enough for the
-reference implementation:
+This must be an EC P-256 key (ES256).
+
+**Google Wallet does not accept a self-signed certificate here.** It only honours
+certificates signed by Google or by a Verifier Registrar, and every certificate has to
+be registered before production use. For development, use the pre-trusted
+[sandbox test key pair](https://developers.google.com/wallet/identity/verify/sandbox)
+(the Google account must be allowlisted and its TapAndPay environment set to SANDBOX);
+for production, submit a CSR as described in
+[Online Acceptance](https://developers.google.com/wallet/identity/verify/accepting-ids-from-wallet-online).
+Unsigned requests (`openid4vp-v1-unsigned`, single-device flows only) need no
+certificate at all.
+
+A self-signed certificate remains useful for local testing and for wallets that do
+their own trust management:
 
 ```bash
 cat > ext.cnf <<'EOF'
