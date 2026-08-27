@@ -1,0 +1,10 @@
+# Build/deploy artefacts that have no business in the runtime image.
+# The image is public, so this also keeps local paths and infra details out of it.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+Dockerfile
+.dockerignore
+helm/
+app.yaml
